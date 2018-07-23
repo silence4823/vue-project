@@ -4,7 +4,7 @@
       <li v-for="group in data" :key="group.title" class="list-group" ref="listGroup">
         <h2 class="list-group-title">{{group.title}}</h2>
         <ul>
-          <li v-for="item in group.items" :key="item.id" class="list-group-item">
+          <li @click="selectItem(item)" v-for="item in group.items" :key="item.id" class="list-group-item">
             <img class="avatar" :src="item.avatar" />
             <span class="name">{{item.name}}</span>
           </li>
@@ -22,6 +22,7 @@
       <h1 class="fixed-title">{{fixedTitle}}</h1>
     </div>
     <div v-show="!data.length" class="loading-container">
+      <loading></loading>
     </div>
   </scroll>
 </template>
@@ -96,6 +97,9 @@ export default {
         height += item.clientHeight
         this.listHeight.push(height)
       }
+    },
+    selectItem (item) {
+      this.$emit('select', item)
     }
   },
   watch: {

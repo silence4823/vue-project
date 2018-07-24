@@ -29,7 +29,6 @@ export default {
   },
   methods: {
     selectSinger (singer) {
-      console.log(2)
       this.$router.push({
         path: `/singer/${singer.id}`
       })

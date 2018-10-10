@@ -13,10 +13,19 @@
             </li>
           </ul>
         </div>
+        <div class="search-history" v-show="searchHistory.length">
+          <h1 class="title">
+            <span class="text">搜索历史</span>
+            <span class="clear" @click="clearAll">
+              <i class="icon-clear"></i>删除
+            </span>
+          </h1>
+          <search-list :searches="searchHistory" @select="addQuery" @delete="deleteOne"></search-list>
+        </div>
       </div>
     </div>
     <div class="search-result" v-show="query">
-      <suggest :query="query"></suggest>
+      <suggest :query="query" @listScroll="blurInput" @select="saveSearch"></suggest>
     </div>
     <router-view></router-view>
   </div>
@@ -27,6 +36,8 @@ import SearchBox from 'base/search-box/search-box'
 import {getHotKey} from 'api/search'
 import {ERR_OK} from 'api/config'
 import Suggest from 'components/suggest/suggest'
+import SearchList from 'base/search-list/search-list'
+import {mapActions, mapGetters} from 'vuex'
 
 export default {
   created () {
@@ -37,6 +48,11 @@ export default {
       hotkey: [],
       query: ''
     }
+  },
+  computed: {
+    ...mapGetters([
+      'searchHistory'
+    ])
   },
   methods: {
     _getHotKey () {
@@ -51,11 +67,25 @@ export default {
     },
     onQueryChange (query) {
       this.query = query
-    }
+    },
+    blurInput () {
+      this.$refs.searchBox.blur()
+    },
+    saveSearch () {
+      this.saveSearchHistory(this.query)
+    },
+    deleteOne (item) {
+      this.deleteSearchHistory(item)
+    },
+    clearAll () {
+      this.clearSearchHistory()
+    },
+    ...mapActions(['saveSearchHistory', 'deleteSearchHistory', 'clearSearchHistory'])
   },
   components: {
     SearchBox,
-    Suggest
+    Suggest,
+    SearchList
   }
 }
 </script>

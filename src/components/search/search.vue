@@ -3,8 +3,9 @@
     <div class="search-box-wrapper">
       <search-box ref="searchBox" @query="onQueryChange"></search-box>
     </div>
-    <div class="shortcut-wrapper" v-show="!query">
-      <div class="shortcut">
+    <div class="shortcut-wrapper" v-show="!query" ref="shortcutWrapper">
+      <scroll class="shortcut" :data="shortcut" ref="shortcut">
+        <div>
         <div class="hot-key">
           <h1 class="title">热门搜索</h1>
           <ul>
@@ -16,17 +17,19 @@
         <div class="search-history" v-show="searchHistory.length">
           <h1 class="title">
             <span class="text">搜索历史</span>
-            <span class="clear" @click="clearAll">
+            <span class="clear" @click="showConfirm">
               <i class="icon-clear"></i>删除
             </span>
           </h1>
-          <search-list :searches="searchHistory" @select="addQuery" @delete="deleteOne"></search-list>
+          <search-list :searches="searchHistory" @select="addQuery" @delete="deleteSearchHistory"></search-list>
         </div>
-      </div>
+        </div>
+      </scroll>
     </div>
-    <div class="search-result" v-show="query">
-      <suggest :query="query" @listScroll="blurInput" @select="saveSearch"></suggest>
+    <div class="search-result" v-show="query" ref="searchResult">
+      <suggest ref="suggest" :query="query" @listScroll="blurInput" @select="saveSearch"></suggest>
     </div>
+    <confirm ref="confirm" text="是否清空所有搜索历史" confirmBtnText="清空" @confirm="clearSearchHistory"></confirm>
     <router-view></router-view>
   </div>
 </template>
@@ -37,9 +40,13 @@ import {getHotKey} from 'api/search'
 import {ERR_OK} from 'api/config'
 import Suggest from 'components/suggest/suggest'
 import SearchList from 'base/search-list/search-list'
+import Confirm from 'base/confirm/confirm'
+import Scroll from 'base/scroll/scroll'
 import {mapActions, mapGetters} from 'vuex'
+import {playlistMixin} from 'common/js/mixin'
 
 export default {
+  mixins: [playlistMixin],
   created () {
     this._getHotKey()
   },
@@ -50,11 +57,21 @@ export default {
     }
   },
   computed: {
+    shortcut () {
+      return this.hotkey.concat(this.searchHistory)
+    },
     ...mapGetters([
       'searchHistory'
     ])
   },
   methods: {
+    handlePlaylist  (playlist) {
+      const bottom = playlist.length > 0 ? '60px' : ''
+      this.$refs.shortcutWrapper.style.bottom = bottom
+      this.$refs.shortcut.refresh()
+      this.$refs.searchResult.style.bottom = bottom
+      this.$refs.suggest.refresh()
+    },
     _getHotKey () {
       getHotKey().then((resp) => {
         if (resp.code === ERR_OK) {
@@ -74,18 +91,26 @@ export default {
     saveSearch () {
       this.saveSearchHistory(this.query)
     },
-    deleteOne (item) {
-      this.deleteSearchHistory(item)
-    },
-    clearAll () {
-      this.clearSearchHistory()
+    showConfirm () {
+      this.$refs.confirm.show()
     },
     ...mapActions(['saveSearchHistory', 'deleteSearchHistory', 'clearSearchHistory'])
+  },
+  watch: {
+    query (newQuery) {
+      if (!newQuery) {
+        setTimeout(() => {
+          this.$refs.shortcut.refresh()
+        }, 20)
+      }
+    }
   },
   components: {
     SearchBox,
     Suggest,
-    SearchList
+    SearchList,
+    Confirm,
+    Scroll
   }
 }
 </script>
